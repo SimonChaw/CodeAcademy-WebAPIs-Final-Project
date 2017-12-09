@@ -1,18 +1,18 @@
 const express = require('express');
 const employeeRouter = express.Router();
+const timesheetsRouter = require('./timesheets');
 
 const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
-
 /*-------
 EMPLOYEE ROUTER
 --------*/
 //PARAMS
-employeeRouter.param('id', (res, req, next, id) => {
-  const sql = 'SELECT * FROM Employee WHERE id = $id';
+employeeRouter.param('employeeId', (res, req, next, employeeId) => {
+  const sql = 'SELECT * FROM Employee WHERE id = $employeeId';
   //Protect against SQL Injections
-  const values = {$id: id};
-  db.get(sql, values, (err, employee){
+  const values = {$id: employeeId};
+  db.get(sql, values, (err, employee) => {
     if(err){
       next(err);
     }else if(employee){
@@ -35,11 +35,14 @@ const employeeValidator = (req, res, next) => {
   next();
 }
 
+//TIMESHEETS
+employeeRouter.use('/:employeeId/timesheets/', timesheetsRouter);
+
 //GET
-employeeRouter.get('/', (res, req, next){
+employeeRouter.get('/', (res, req, next) => {
   //Get only employees who are currently working
   const sql = 'SELECT * FROM Employee WHERE is_currently_employed = 1';
-  db.get(sql, (err, data){
+  db.get(sql, (err, data) => {
     //Handle any errors
     if(err){
       next(err);
@@ -50,7 +53,7 @@ employeeRouter.get('/', (res, req, next){
   });
 });
 
-employeeRouter.get('/:id', (res, req, next) {
+employeeRouter.get('/:employeeId', (res, req, next) => {
   res.status(200).json({employee: req.employee});
 });
 
@@ -78,7 +81,7 @@ employeeRouter.post('/', employeeValidator, (req, res, next) => {
 });
 
 //PUT
-employeeRouter.put('/:id', employeeValidator, (res, req, next) => {
+employeeRouter.put('/:employeeId', employeeValidator, (res, req, next) => {
   const employee = req.body.employee;
   //Protect against SQL injections
   const sql = 'UPDATE Employee SET name = $name, position = $position, wage = $wage, is_currently_employed = $is_currently_employed WHERE Employee.id = $id';
@@ -87,7 +90,7 @@ employeeRouter.put('/:id', employeeValidator, (res, req, next) => {
     $position: employee.position,
     $wage: employee.wage,
     $is_currently_employed: employee.isCurrentlyEmployed,
-    $id: req.params.id
+    $id: req.params.employeeId
   };
   db.run(sql, values, function(err){
     //Handle any errors
@@ -102,11 +105,11 @@ employeeRouter.put('/:id', employeeValidator, (res, req, next) => {
 });
 
 //DELETE
-employeeRouter.delete(':id', (res, req, next) => {
+employeeRouter.delete(':employeeId', (res, req, next) => {
   //Protect against SQL injections
   const sql = 'UPDATE Employee SET is_currently_employed = 0 WHERE Employee.id = $id';
-  const values = {$id: req.params.id};
-  db.run(sql, values, (err){
+  const values = {$id: req.params.employeeId};
+  db.run(sql, values, (err) => {
     if(err){
       next(err);
     }
