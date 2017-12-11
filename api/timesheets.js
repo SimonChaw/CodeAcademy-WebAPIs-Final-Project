@@ -9,7 +9,7 @@ TIMESHEET ROUTER
 --------*/
 //PARAMS
 timesheetsRouter.param('timesheetId', (req, res, next, timesheetId) => {
-  const sql = 'SELECT * FROM timesheetId WHERE id = $timesheetId';
+  const sql = 'SELECT * FROM Timesheet WHERE id = $id';
   //Protect against SQL Injections
   const values = {$id: timesheetId};
   db.get(sql, values, (err, timesheet) => {
@@ -44,7 +44,6 @@ timesheetsRouter.get('/', (req, res, next) => {
     if(err){
       next(err);
     }else{
-      console.log(data);
       //Return timesheets belonging to employee
       res.status(200).json({timesheets: data})
     }
@@ -55,12 +54,36 @@ timesheetsRouter.get('/', (req, res, next) => {
 timesheetsRouter.put('/:timesheetId', timesheetValidator, (req, res, next) => {
   //UPDATE specific timesheet
   const timesheet = req.body.timesheet;
-  const sql = 'UPDATE Timesheet SET hours = $hours, rate = $rate, date = $date, employee_id = $employee_id WHERE Timesheet.id = $id';
+  const sql = 'UPDATE Timesheet SET hours = $hours, rate = $rate, date = $date, employee_id = $employee_id WHERE id = $id';
   const values = {
     $hours: timesheet.hours,
     $rate: timesheet.rate,
     $date: timesheet.date,
-    $employee_id: req.params.employeeId
+    $employee_id: req.employee.id,
+    $id: req.params.timesheetId
+  };
+  db.run(sql, values, function(err){
+    //Handle any errors
+    if(err){
+      next(err);
+    }
+    //Ensure the update was applied to the database
+    db.get('SELECT * FROM Timesheet WHERE id = $id', {$id: req.params.timesheetId}, (err, data) => {
+      res.status(200).json({timesheet: data});
+    });
+  });
+});
+
+//POST
+timesheetsRouter.post('/', timesheetValidator, (req, res, next) => {
+  //UPDATE specific timesheet
+  const timesheet = req.body.timesheet;
+  const sql = 'INSERT INTO Timesheet (hours, rate, date, employee_id) VALUES ($hours, $rate, $date, $employee_id)';
+  const values = {
+    $hours: timesheet.hours,
+    $rate: timesheet.rate,
+    $date: timesheet.date,
+    $employee_id: req.employee.id
   };
   db.run(sql, values, function(err){
     //Handle any errors
@@ -69,13 +92,13 @@ timesheetsRouter.put('/:timesheetId', timesheetValidator, (req, res, next) => {
     }
     //Ensure the update was applied to the database
     db.get(`SELECT * FROM Timesheet WHERE id = ${this.lastID}`, (err, data) => {
-      res.status(200).json({timesheet: data});
+      res.status(201).json({timesheet: data});
     });
   });
 });
 
 //DELETE
-timesheetsRouter.delete(':timesheetId', (req, res, next) => {
+timesheetsRouter.delete('/:timesheetId', (req, res, next) => {
   //Protect against SQL injections
   const sql = 'DELETE FROM Timesheet WHERE id = $id';
   const values = {$id: req.params.timesheetId};
