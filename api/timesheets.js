@@ -38,31 +38,15 @@ const timesheetValidator = (req, res, next) => {
 //GET
 timesheetsRouter.get('/', (req, res, next) => {
   //Get timesheets that belong to employee
-  const sql = 'SELECT * FROM Timesheet WHERE employee_id = $employee_id';
-  const values = {$employee_id: req.params.employeeId};
-  db.get(sql, values, (err, data) => {
+  const sql = 'SELECT * FROM Timesheet WHERE employee_id = $employeeId';
+  const values = {$employeeId: req.employee.id};
+  db.all(sql, values, (err, data) => {
     if(err){
       next(err);
     }else{
+      console.log(data);
       //Return timesheets belonging to employee
       res.status(200).json({timesheets: data})
-    }
-  });
-});
-
-timesheetsRouter.get('/:timesheetId', (req, res, next) => {
-  //GET Specific timesheet belonging to Employee
-  const sql = 'SELECT * FROM Timesheet WHERE employee_id = $employee_id AND id = $id';
-  const values = {
-    $employee_id: req.params.employeeId,
-    $id: req.params.timesheetId
-  }
-  db.get(sql, values, (err, data) => {
-    if(err){
-      next(err);
-    }else{
-      //Found the timesheet! Send it back
-      res.status(200).json({timesheet: data});
     }
   });
 });

@@ -106,8 +106,7 @@ employeeRouter.put('/:employeeId', employeeValidator, (req, res, next) => {
 });
 
 //DELETE
-employeeRouter.delete(':employeeId', (req, res, next) => {
-  console.log('hit');
+employeeRouter.delete('/:employeeId', (req, res, next) => {
   //Protect against SQL injections
   const sql = 'UPDATE Employee SET is_current_employee = 0 WHERE Employee.id = $id';
   const values = {$id: req.params.employeeId};
@@ -117,7 +116,6 @@ employeeRouter.delete(':employeeId', (req, res, next) => {
     }
     //Ensure the update was applied to the database
     db.get('SELECT * FROM Employee WHERE id = $id', {$id: req.params.employeeId}, (err, data) => {
-      console.log(data);
       res.status(200).json({employee: data});
     });
   });
