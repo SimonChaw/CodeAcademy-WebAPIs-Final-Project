@@ -4,12 +4,13 @@ const timesheetsRouter = require('./timesheets');
 
 const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
+let employeeT;
 /*-------
 EMPLOYEE ROUTER
 --------*/
 //PARAMS
-employeeRouter.param('employeeId', (res, req, next, employeeId) => {
-  const sql = 'SELECT * FROM Employee WHERE id = $employeeId';
+employeeRouter.param('employeeId', (req, res, next, employeeId) => {
+  const sql = 'SELECT * FROM Employee WHERE id = $id';
   //Protect against SQL Injections
   const values = {$id: employeeId};
   db.get(sql, values, (err, employee) => {
@@ -39,10 +40,10 @@ const employeeValidator = (req, res, next) => {
 employeeRouter.use('/:employeeId/timesheets/', timesheetsRouter);
 
 //GET
-employeeRouter.get('/', (res, req, next) => {
+employeeRouter.get('/', (req, res, next) => {
   //Get only employees who are currently working
-  const sql = 'SELECT * FROM Employee WHERE is_currently_employed = 1';
-  db.get(sql, (err, data) => {
+  const sql = 'SELECT * FROM Employee WHERE is_current_employee = 1';
+  db.all(sql, (err, data) => {
     //Handle any errors
     if(err){
       next(err);
@@ -53,7 +54,7 @@ employeeRouter.get('/', (res, req, next) => {
   });
 });
 
-employeeRouter.get('/:employeeId', (res, req, next) => {
+employeeRouter.get('/:employeeId', (req, res, next) => {
   res.status(200).json({employee: req.employee});
 });
 
@@ -61,12 +62,12 @@ employeeRouter.get('/:employeeId', (res, req, next) => {
 employeeRouter.post('/', employeeValidator, (req, res, next) => {
   //Get employee from req, prepare sql & values
   const employee = req.body.employee;
-  const sql = `INSERT INTO Employee(name, position, wage, is_currently_employed) VALUES ($name, $position, $wage, $is_currently_employed)`;
+  const sql = `INSERT INTO Employee(name, position, wage, is_current_employee) VALUES ($name, $position, $wage, $is_current_employee)`;
   const values = {
     $name: employee.name,
     $position: employee.position,
     $wage: employee.wage,
-    $is_currently_employed: 1
+    $is_current_employee: 1
   };
   db.run(sql, values, function(err){
     //Handle any errors
@@ -81,15 +82,15 @@ employeeRouter.post('/', employeeValidator, (req, res, next) => {
 });
 
 //PUT
-employeeRouter.put('/:employeeId', employeeValidator, (res, req, next) => {
+employeeRouter.put('/:employeeId', employeeValidator, (req, res, next) => {
   const employee = req.body.employee;
   //Protect against SQL injections
-  const sql = 'UPDATE Employee SET name = $name, position = $position, wage = $wage, is_currently_employed = $is_currently_employed WHERE Employee.id = $id';
+  const sql = 'UPDATE Employee SET name = $name, position = $position, wage = $wage, is_current_employee = $is_current_employee WHERE Employee.id = $id';
   const values = {
     $name: employee.name,
     $position: employee.position,
     $wage: employee.wage,
-    $is_currently_employed: employee.isCurrentlyEmployed,
+    $is_current_employee: 1,
     $id: req.params.employeeId
   };
   db.run(sql, values, function(err){
@@ -98,23 +99,27 @@ employeeRouter.put('/:employeeId', employeeValidator, (res, req, next) => {
       next(err);
     }
     //Ensure the update was applied to the database
-    db.get(`SELECT * FROM Employee WHERE id = ${this.lastID}`, (err, data) => {
+    db.get('SELECT * FROM Employee WHERE id = $id', {$id: req.params.employeeId}, (err, data) => {
       res.status(200).json({employee: data});
     });
   });
 });
 
 //DELETE
-employeeRouter.delete(':employeeId', (res, req, next) => {
+employeeRouter.delete(':employeeId', (req, res, next) => {
+  console.log('hit');
   //Protect against SQL injections
-  const sql = 'UPDATE Employee SET is_currently_employed = 0 WHERE Employee.id = $id';
+  const sql = 'UPDATE Employee SET is_current_employee = 0 WHERE Employee.id = $id';
   const values = {$id: req.params.employeeId};
   db.run(sql, values, (err) => {
     if(err){
       next(err);
     }
-    //Employee successfully updated
-    res.sendStatus(200);
+    //Ensure the update was applied to the database
+    db.get('SELECT * FROM Employee WHERE id = $id', {$id: req.params.employeeId}, (err, data) => {
+      console.log(data);
+      res.status(200).json({employee: data});
+    });
   });
 });
 

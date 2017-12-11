@@ -8,7 +8,7 @@ const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite'
 TIMESHEET ROUTER
 --------*/
 //PARAMS
-timesheetsRouter.param('timesheetId', (res, req, next, timesheetId) => {
+timesheetsRouter.param('timesheetId', (req, res, next, timesheetId) => {
   const sql = 'SELECT * FROM timesheetId WHERE id = $timesheetId';
   //Protect against SQL Injections
   const values = {$id: timesheetId};
@@ -50,7 +50,7 @@ timesheetsRouter.get('/', (req, res, next) => {
   });
 });
 
-timesheetsRouter.get('/:timesheetId', (res, req, next) => {
+timesheetsRouter.get('/:timesheetId', (req, res, next) => {
   //GET Specific timesheet belonging to Employee
   const sql = 'SELECT * FROM Timesheet WHERE employee_id = $employee_id AND id = $id';
   const values = {
@@ -68,7 +68,7 @@ timesheetsRouter.get('/:timesheetId', (res, req, next) => {
 });
 
 //PUT
-timesheetsRouter.put('/:timesheetId', timesheetValidator, (res, req, next) => {
+timesheetsRouter.put('/:timesheetId', timesheetValidator, (req, res, next) => {
   //UPDATE specific timesheet
   const timesheet = req.body.timesheet;
   const sql = 'UPDATE Timesheet SET hours = $hours, rate = $rate, date = $date, employee_id = $employee_id WHERE Timesheet.id = $id';
@@ -91,7 +91,7 @@ timesheetsRouter.put('/:timesheetId', timesheetValidator, (res, req, next) => {
 });
 
 //DELETE
-timesheetsRouter.delete(':timesheetId', (res, req, next) => {
+timesheetsRouter.delete(':timesheetId', (req, res, next) => {
   //Protect against SQL injections
   const sql = 'DELETE FROM Timesheet WHERE id = $id';
   const values = {$id: req.params.timesheetId};
