@@ -9,7 +9,6 @@ MENUITEMS ROUTER
 --------*/
 //PARAMS
 menuitemsRouter.param('menuItemId', (req, res, next, menuItemId) => {
-  console.log('Menu Item Id being validated');
   const sql = 'SELECT * FROM MenuItem WHERE id = $id';
   //Protect against SQL Injections
   const values = {$id: menuItemId};

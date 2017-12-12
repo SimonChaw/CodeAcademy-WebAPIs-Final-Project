@@ -29,7 +29,6 @@ menuRouter.param('menuId', (req, res, next, menuId) => {
           }
         });
       }else{
-        console.log("not applicable");
         next();
       }
     }else{
