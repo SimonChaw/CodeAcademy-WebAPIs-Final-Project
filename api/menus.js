@@ -1,5 +1,6 @@
 const express = require('express');
 const menuRouter = express.Router();
+const menuitemsRouter = require('./menuitems');
 
 const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
@@ -18,16 +19,17 @@ menuRouter.param('menuId', (req, res, next, menuId) => {
     }else if(menu){
       //The menu actually exists, attach it to req so .get('/:id') doesn't have to search again
       req.menu = menu;
-      if(req.method === 'DELETE'){
+      if(req.method === 'DELETE' && !req.url.includes('/menu-items')){
         //Make sure that this menu has no attached menu items on delete
-        db.all('SELECT * FROM MenuItem WHERE id = $id', {$id: menuId}, (err, data) => {
-          if(data.length > 0){
+        db.all('SELECT * FROM MenuItem WHERE menu_id = $id', {$id: menuId}, (err, data) => {
+          if(data.length > 0){ //There are existing menu items! Don't delete!
             res.sendStatus(400);
           }else{
-            next();
+            next();//We're good.
           }
         });
       }else{
+        console.log("not applicable");
         next();
       }
     }else{
@@ -45,6 +47,9 @@ const menuValidator = (req, res, next) => {
   }
   next();
 }
+
+//MENU ITEMS
+menuRouter.use('/:menuId/menu-items', menuitemsRouter);
 
 //GET
 menuRouter.get('/', (req, res, next) => {
