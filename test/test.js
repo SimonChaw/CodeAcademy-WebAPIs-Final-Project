@@ -926,6 +926,7 @@ describe('PUT /api/menus/:id', function() {
 describe('DELETE /api/menus/:id', function() {
   beforeEach(function(done) {
     seed.seedMenuDatabase(done);
+
   });
 
   it('should remove the menu with the specified ID from the database if that menu has no related menu items', function(done) {
@@ -950,9 +951,9 @@ describe('DELETE /api/menus/:id', function() {
 
   it('should not delete menus with existing related menu items', function(done) {
     request(app)
-        .del('/api/menus/2')
+        .del('/api/menus/1')
         .then(function() {
-          testDb.get('SELECT * FROM Menu WHERE Menu.id = 2', function(error, menu) {
+          testDb.get('SELECT * FROM Menu WHERE Menu.id = 1', function(error, menu) {
             if (error) {
               throw new Error(error);
             }
@@ -964,7 +965,7 @@ describe('DELETE /api/menus/:id', function() {
 
   it('should not return a 400 status code if deleted menu has existing related menu items', function() {
     return request(app)
-        .del('/api/menus/2')
+        .del('/api/menus/1')
         .expect(400);
   });
 });
